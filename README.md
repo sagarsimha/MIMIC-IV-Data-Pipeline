@@ -142,7 +142,8 @@ mimiciv/
 ├── images/dict.png              # figure(s) for docs
 └── summary/mimiciv_cxr_summary.txt
 ```
-
+### How does the multimodal integration work?
+![MIMIC connect](images_v2/mimic_connect.png)
 ### Repository Structure
 
 - **mainPipeline.ipynb**
