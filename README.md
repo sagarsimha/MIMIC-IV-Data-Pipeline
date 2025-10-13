@@ -1,4 +1,4 @@
-# MIMIC-IV
+# MIMIC-IV Multimodal Pipeline
 ![MIMIC overview](images_v2/mimic_multimodal.png)
 
 **MIMIC-IV data pipeline** is an end-to-end pipeline that offers a configurable framework to prepare MIMIC-IV data for the downstream tasks. 
@@ -11,6 +11,9 @@ Besides the data processing modules, our pipeline also includes two additional m
 For modeling, the pipeline includes several commonly used sequential models for performing prediction tasks. 
 The evaluation module offers a series of standard methods for evaluating the performance of the created models. 
 This module also includes options for reporting individual and group fairness measures.
+
+**MIMIC-IV Multimodal Pipeline**
+A reproducible multimodal pipeline to integrate MIMIC-IV data across **five** modalities—structured EHR tables, clinical notes, chest X-ray metadata, Echocardiograms, and ECG waveforms—into single, analysis-ready cohorts with optional cached embeddings/tensors for downstream predictive tasks (mortality, LOS, diagnosis).
 
 ##### Citing MIMIC-IV Data Pipeline:
 MIMIC-IV Data Pipeline is available on [ML4H](https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf).
@@ -32,17 +35,113 @@ If you use MIMIC-IV Data Pipeline, we would appreciate citations to the followin
 ```
 
 ## Table of Contents:
+- [Dataset access](#Dataset-access)
 - [Steps to download MIMIC-IV dataset for the pipeline](#Steps-to-download-MIMIC-IV-dataset-for-the-pipeline)
 - [Repository Structure](#Repository-Structure)
 - [How to use the pipeline?](#How-to-use-the-pipeline)
 
-### Steps to download the MIMIC-IV dataset for the pipeline
 
-Go to https://physionet.org/content/mimiciv/1.0/
+### Dataset access
+Before downloading, request access to MIMIC-IV datasets via [PhysioNet](https://physionet.org/about/citi-course/).
 
-Follow the instructions to get access to the MIMIC-IV dataset.
+Check if the particular dataset you are using requires CITI training. 
 
-Download the files using your terminal: wget -r -N -c -np --user mehakg --ask-password https://physionet.org/files/mimiciv/1.0/
+- [MIMIC-IV v1.0](https://physionet.org/content/mimiciv/1.0/)  
+- [MIMIC-IV v2.0](https://physionet.org/content/mimiciv/2.0/)  
+- [MIMIC-IV v3.1](https://physionet.org/content/mimiciv/3.1/)  
+- [MIMIC-IV Notes v2.2](https://physionet.org/content/mimic-iv-note/2.2/)  
+- [MIMIC-CXR v2.1.0](https://physionet.org/content/mimic-cxr/2.1.0/) OR [MIMIC-CXR-JPG](https://physionet.org/content/mimic-cxr-jpg/2.1.0/)
+- [MIMIC-IC-ECG v1.0](https://physionet.org/content/mimic-iv-ecg/1.0/)
+- [MIMIC-IV-ECHO v0.1](https://physionet.org/content/mimic-iv-echo/0.1/)
+- [MIMIC-IV-Waveform v0.1.0](https://physionet.org/content/mimic4wdb/0.1.0/)
+
+---
+
+## Step 2: Download
+
+Use `wget` from your terminal to download the datasets. Replace `[USERNAME]` with your PhysioNet username.
+
+For manually downloading datasets, use the following commands:
+
+**MIMIC-IV v1.0**
+wget -r -N -c -np --user [USERNAME] --ask-password https://physionet.org/files/mimiciv/1.0/
+
+**MIMIC-IV v2.0**
+wget -r -N -c -np --user [USERNAME] --ask-password https://physionet.org/files/mimiciv/2.0/
+
+**MIMIC-IV v3.1**
+wget -r -N -c -np --user [USERNAME] --ask-password https://physionet.org/files/mimiciv/3.1/
+
+**MIMIC-CXR**
+wget -r -N -c -np --user [USERNAME] --ask-password https://physionet.org/files/mimic-cxr/2.1.0/
+
+**MIMIC-CXR-JPG**
+wget -r -N -c -np --user [USERNAME] --ask-password https://physionet.org/files/mimic-cxr-jpg/2.1.0/
+
+**MIMIC-IV-ECG v1.0**
+wget -r -N -c -np https://physionet.org/files/mimic-iv-ecg/1.0/
+
+**MIMIC-IC-ECHO v0.1**
+wget -r -N -c -np --user [USERNAME] --ask-password https://physionet.org/files/mimic-iv-echo/0.1/
+
+**MIMIC-IV-Waveform v0.1.0**
+wget -r -N -c -np https://physionet.org/files/mimic4wdb/0.1.0/
+
+---
+
+## Steps to download the MIMIC-IV dataset for the pipeline
+When placing all data collected from PhysioNet, store it inside the **mimiciv/** folder following this structure:
+
+```
+mimiciv/
+    1.0/
+        core/
+        hosp/
+        icu/
+    2.0/
+        hosp/
+        icu/
+    3.1/
+        hosp/
+        icu/
+    notes/
+    cxr/
+    ecg/
+    echo/
+    wave/
+```
+
+### Repository Layout
+```
+.
+├── mainPipeline.ipynb           # End-to-end notebook (wizard style)
+├── environment.yml              # for conda env
+├── requirements.txt             # Pip requirements
+├── data/                        # local data repo
+├── mimiciv/                     # MIMIC-IV data (see Data Access)
+│   ├── 1.0/ 2.0/ 3.1/           # versioned dirs if mirrored
+│   ├── cxr/ ecg/ echo/ notes/ wave/
+├── mappings/                    # key mapping files (CSV/CSV.GZ/TXT)
+│   ├── mimic-cxr-2.0.0-metadata.csv.gz
+│   ├── ecg_record_list.csv.gz, wave_record_list.csv.gz
+│   ├── diagnoses_icd.csv.gz, ICD9_to_ICD10_mapping.txt,
+├── utils/
+│   ├── icd_search.py
+│   ├── icd_cohort_combined_searching.py
+│   ├── hosp_preprocess_util.py, icu_preprocess_util.py, labs_preprocess_util.py
+│   ├── notes_preproc.py, mimiciv_text_sectionizer.py, notes_embedding.py
+│   ├── image_embeddings.py, ecg_signal_embedding_extraction.py
+│   ├── uom_conversion.py, outlier_removal.py, combination_util.py
+├── model/
+│   ├── behrt_model.py, behrt_train.py, bert_notes.py
+│   ├── cxr_mortality_model_*.pkl, bert_mortality.pt
+│   └── calibrate_output.py
+├── features/chartevents/        # (optional) derived features
+├── cohort/ csv/ output/         # generated cohorts / exports
+├── saved_models/checkpoint/     # your checkpoints
+├── images/dict.png              # figure(s) for docs
+└── summary/mimiciv_cxr_summary.txt
+```
 
 ### Repository Structure
 
