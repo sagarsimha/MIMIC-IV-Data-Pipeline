@@ -13,11 +13,11 @@ The evaluation module offers a series of standard methods for evaluating the per
 This module also includes options for reporting individual and group fairness measures.
 
 **MIMIC-IV Multimodal Pipeline**
-A reproducible multimodal pipeline to integrate MIMIC-IV data across **five** modalities—structured EHR tables, clinical notes, chest X-ray metadata, Echocardiograms, and ECG waveforms—into single, analysis-ready cohorts with optional cached embeddings/tensors for downstream predictive tasks (mortality, LOS, diagnosis).
+A MIMIC IV multimodal pipeline integrating multiple modalities, including structured data (e.g., vitals, labs, medications), unstructured data (e.g., clinical notes, radiology reports), waveforms (e.g., electrocardiogram signals), and imaging data (e.g., chest X-rays, echocardiograms). While each modality has been individually leveraged in prior research, these modalities remain disjointed in their storage and access, requiring extensive manual effort to preprocess and align them for downstream analysis. In this work, we introduce a comprehensive and customizable multimodal data processing pipeline for MIMIC-IV that systematically integrates five modalities.
 
 ##### Citing MIMIC-IV Data Pipeline:
 MIMIC-IV Data Pipeline is available on [ML4H](https://proceedings.mlr.press/v193/gupta22a/gupta22a.pdf).
-If you use MIMIC-IV Data Pipeline, we would appreciate citations to the following paper.
+If you use the MIMIC-IV Data Pipeline, we would appreciate citations to the following paper.
 
 ```
 @InProceedings{gupta2022extensive,
