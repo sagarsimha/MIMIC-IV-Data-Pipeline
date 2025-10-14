@@ -3,3 +3,6 @@ scrap
 *.gzip
 *.csv.gz
 *summary*.txt
+mimiciv/
+__pycache__/
+*.py[cod]
