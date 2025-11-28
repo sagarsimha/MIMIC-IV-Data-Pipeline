@@ -6,3 +6,8 @@ scrap
 mimiciv/
 __pycache__/
 *.py[cod]
+# Ignore local data folder
+data/
+MIMIC-IV-Data-Pipeline.code-workspace
+backups/
+mainPipeline_old.ipynb

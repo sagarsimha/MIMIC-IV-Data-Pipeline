@@ -39,20 +39,22 @@ def feature_icu(cohort_output, version_path, diag_flag=True,out_flag=True,chart_
     if out_flag:  
         print("[EXTRACTING OUPTPUT EVENTS DATA]")
         out = preproc_out("./"+version_path+"/icu/outputevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'charttime', dtypes=None, usecols=None)
-        out[['subject_id', 'hadm_id', 'stay_id', 'itemid', 'charttime', 'intime', 'event_time_from_admit']].to_csv("./data/features/preproc_out_icu.csv.gz", compression='gzip', index=False)
+        #out[['subject_id', 'hadm_id', 'stay_id', 'itemid', 'charttime', 'intime', 'event_time_from_admit']].to_csv("./data/features/preproc_out_icu.csv.gz", compression='gzip', index=False)
+        out[['subject_id', 'hadm_id', 'stay_id', 'itemid', 'charttime', 'intime', 'event_time_from_admit', 'value', 'valueuom', 'outtime']].to_csv("./data/features/preproc_out_icu.csv.gz", compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED OUPTPUT EVENTS DATA]")
     
     if chart_flag:
         print("[EXTRACTING CHART EVENTS DATA]")
-        chart=preproc_chart("./"+version_path+"/icu/chartevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'charttime', dtypes=None, usecols=['stay_id','charttime','itemid','valuenum','valueuom'])
+        chart=preproc_chart("./"+version_path+"/icu/chartevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'charttime', dtypes=None, usecols=['stay_id','charttime','itemid','valuenum','valueuom', 'value'])
         chart = drop_wrong_uom(chart, 0.95)
-        chart[['stay_id', 'itemid','event_time_from_admit','valuenum']].to_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', index=False)
+        chart[['stay_id', 'itemid','event_time_from_admit','valuenum', 'value']].to_csv("./data/features/preproc_chart_icu.csv.gz", compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED CHART EVENTS DATA]")
     
     if proc_flag:
         print("[EXTRACTING PROCEDURES DATA]")
-        proc = preproc_proc("./"+version_path+"/icu/procedureevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'starttime', dtypes=None, usecols=['stay_id','starttime','itemid'])
-        proc[['subject_id', 'hadm_id', 'stay_id', 'itemid', 'starttime', 'intime', 'event_time_from_admit']].to_csv("./data/features/preproc_proc_icu.csv.gz", compression='gzip', index=False)
+        proc = preproc_proc("./"+version_path+"/icu/procedureevents.csv.gz", './data/cohort/'+cohort_output+'.csv.gz', 'starttime', 'endtime', dtypes=None, usecols=['stay_id','starttime', 'endtime', 'itemid'])
+        #proc[['subject_id', 'hadm_id', 'stay_id', 'itemid', 'starttime', 'intime', 'event_time_from_admit']].to_csv("./data/features/preproc_proc_icu.csv.gz", compression='gzip', index=False)
+        proc[['subject_id', 'hadm_id', 'stay_id', 'itemid', 'starttime', 'endtime', 'intime', 'event_time_from_admit', 'stop_time_from_admit']].to_csv("./data/features/preproc_proc_icu.csv.gz", compression='gzip', index=False)
         print("[SUCCESSFULLY SAVED PROCEDURES DATA]")
     
     if med_flag:

@@ -125,7 +125,7 @@ def preprocess_features_hosp(cohort_output, diag_flag,proc_flag,med_flag,lab_fla
 def generate_summary_hosp(diag_flag,proc_flag,med_flag,lab_flag):
     print("[GENERATING FEATURE SUMMARY]")
     if diag_flag:
-        diag = pd.read_csv("./data/features/preproc_diag.csv.gz", compression='gzip',header=0)
+        diag = pd.read_csv("./data/features/preproc_diag.csv.gz", compression='gzip',header=0, dtype={'hadm_id': 'int64'})
         freq=diag.groupby(['hadm_id','new_icd_code']).size().reset_index(name="mean_frequency")
         freq=freq.groupby(['new_icd_code'])['mean_frequency'].mean().reset_index()
         total=diag.groupby('new_icd_code').size().reset_index(name="total_count")
@@ -136,7 +136,7 @@ def generate_summary_hosp(diag_flag,proc_flag,med_flag,lab_flag):
 
 
     if med_flag:
-        med = pd.read_csv("./data/features/preproc_med.csv.gz", compression='gzip',header=0)
+        med = pd.read_csv("./data/features/preproc_med.csv.gz", compression='gzip',header=0, dtype={'hadm_id': 'int64'})
         freq=med.groupby(['hadm_id','drug_name']).size().reset_index(name="mean_frequency")
         freq=freq.groupby(['drug_name'])['mean_frequency'].mean().reset_index()
         
@@ -152,7 +152,7 @@ def generate_summary_hosp(diag_flag,proc_flag,med_flag,lab_flag):
     
     
     if proc_flag:
-        proc = pd.read_csv("./data/features/preproc_proc.csv.gz", compression='gzip',header=0)
+        proc = pd.read_csv("./data/features/preproc_proc.csv.gz", compression='gzip',header=0, dtype={'hadm_id': 'int64'})
         freq=proc.groupby(['hadm_id','icd_code']).size().reset_index(name="mean_frequency")
         freq=freq.groupby(['icd_code'])['mean_frequency'].mean().reset_index()
         total=proc.groupby('icd_code').size().reset_index(name="total_count")
@@ -166,7 +166,7 @@ def generate_summary_hosp(diag_flag,proc_flag,med_flag,lab_flag):
     if lab_flag:
         chunksize = 10000000
         labs=pd.DataFrame()
-        for chunk in tqdm(pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip',header=0, index_col=None,chunksize=chunksize)):
+        for chunk in tqdm(pd.read_csv("./data/features/preproc_labs.csv.gz", compression='gzip',header=0, index_col=None, dtype={'hadm_id': 'int64', 'itemid': 'int64'}, chunksize=chunksize)):
             if labs.empty:
                 labs=chunk
             else:
@@ -180,8 +180,9 @@ def generate_summary_hosp(diag_flag,proc_flag,med_flag,lab_flag):
         summary=pd.merge(freq,summary,on='itemid',how='right')
         summary['missing%']=100*(summary['missing_count']/summary['total_count'])
         summary=summary.fillna(0)
+        summary['itemid'] = summary['itemid'].astype('int64')
         summary.to_csv('./data/summary/labs_summary.csv',index=False)
-        summary['itemid'].to_csv('./data/summary/labs_features.csv',index=False)
+        summary['itemid'].astype('int64').to_csv('./data/summary/labs_features.csv',index=False)
 
     print("[SUCCESSFULLY SAVED FEATURE SUMMARY]")
     

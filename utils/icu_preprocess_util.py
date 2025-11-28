@@ -111,12 +111,21 @@ def preproc_meds(module_path:str, adm_cohort_path:str) -> pd.DataFrame:
   
     adm = pd.read_csv(adm_cohort_path, usecols=['hadm_id', 'stay_id', 'intime'], parse_dates = ['intime'])
     med = pd.read_csv(module_path, compression='gzip', usecols=['subject_id', 'stay_id', 'itemid', 'starttime', 'endtime','rate','amount','orderid'], parse_dates = ['starttime', 'endtime'])
-    med = med.merge(adm, left_on = 'stay_id', right_on = 'stay_id', how = 'inner')
+    
+    #med = med.merge(adm, left_on = 'stay_id', right_on = 'stay_id', how = 'inner')
+    # Merge so all cohort stays appear, even if no meds
+    med = adm.merge(med, on='stay_id', how='left')
+    
+
     med['start_hours_from_admit'] = med['starttime'] - med['intime']
     med['stop_hours_from_admit'] = med['endtime'] - med['intime']
     
     #print(med.isna().sum())
-    med=med.dropna()
+    
+    #med=med.dropna()
+    # Drop only rows without stay_id
+    med = med.dropna(subset=['stay_id'])
+
     #med[['amount','rate']]=med[['amount','rate']].fillna(0)
     print("# of unique type of drug: ", med.itemid.nunique())
     print("# Admissions:  ", med.stay_id.nunique())
@@ -124,14 +133,14 @@ def preproc_meds(module_path:str, adm_cohort_path:str) -> pd.DataFrame:
     
     return med
     
-def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict, usecols: list) -> pd.DataFrame:
+def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, time_col_stop:str, dtypes: dict, usecols: list) -> pd.DataFrame:
     """Function for getting hosp observations pertaining to a pickled cohort. Function is structured to save memory when reading and transforming data."""
 
     def merge_module_cohort() -> pd.DataFrame:
         """Gets the initial module data with patients anchor year data and only the year of the charttime"""
         
         # read module w/ custom params
-        module = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col]).drop_duplicates()
+        module = pd.read_csv(dataset_path, compression='gzip', usecols=usecols, dtype=dtypes, parse_dates=[time_col, time_col_stop]).drop_duplicates()
         #print(module.head())
         # Only consider values in our cohort
         cohort = pd.read_csv(cohort_path, compression='gzip', parse_dates = ['intime'])
@@ -140,12 +149,20 @@ def preproc_proc(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict,
         #print(cohort.head())
 
         # merge module and cohort
-        return module.merge(cohort[['subject_id','hadm_id','stay_id', 'intime','outtime']], how='inner', left_on='stay_id', right_on='stay_id')
+        #return module.merge(cohort[['subject_id','hadm_id','stay_id', 'intime','outtime']], how='inner', left_on='stay_id', right_on='stay_id')
+        # Preserve all cohort admissions
+        return cohort[['subject_id','hadm_id','stay_id', 'intime','outtime']].merge(
+            module, how='left', on='stay_id'
+        )
 
     df_cohort = merge_module_cohort()
     df_cohort['event_time_from_admit'] = df_cohort[time_col] - df_cohort['intime']
+    df_cohort['stop_time_from_admit'] = df_cohort[time_col_stop] - df_cohort['intime']
     
-    df_cohort=df_cohort.dropna()
+    #df_cohort=df_cohort.dropna()
+    #df_cohort['valueuom'] = df_cohort['valueuom'].fillna('')  # prevent later unit filters from dropping them
+    df_cohort = df_cohort.dropna(subset=['stay_id'])
+    
     # Print unique counts and value_counts
     print("# Unique Events:  ", df_cohort.itemid.dropna().nunique())
     print("# Admissions:  ", df_cohort.stay_id.nunique())
@@ -170,11 +187,21 @@ def preproc_out(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict, 
         #print(cohort.head())
 
         # merge module and cohort
-        return module.merge(cohort[['stay_id', 'intime','outtime']], how='inner', left_on='stay_id', right_on='stay_id')
+        #return module.merge(cohort[['stay_id', 'intime','outtime']], how='inner', left_on='stay_id', right_on='stay_id')
+        # Preserve all cohort admissions
+        return cohort[['stay_id', 'intime','outtime']].merge(
+            module, how='left', on='stay_id'
+        )
+
 
     df_cohort = merge_module_cohort()
     df_cohort['event_time_from_admit'] = df_cohort[time_col] - df_cohort['intime']
-    df_cohort=df_cohort.dropna()
+    
+    #df_cohort=df_cohort.dropna()
+    # Only drop rows with missing stay_id
+    df_cohort['valueuom'] = df_cohort['valueuom'].fillna('')
+    df_cohort = df_cohort.dropna(subset=['stay_id'])
+    
     # Print unique counts and value_counts
     print("# Unique Events:  ", df_cohort.itemid.nunique())
     print("# Admissions:  ", df_cohort.stay_id.nunique())
@@ -200,13 +227,31 @@ def preproc_chart(dataset_path: str, cohort_path:str, time_col:str, dtypes: dict
         count=count+1
         #chunk['valuenum']=chunk['valuenum'].fillna(0)
         chunk=chunk.dropna(subset=['valuenum'])
-        chunk_merged=chunk.merge(cohort[['stay_id', 'intime']], how='inner', left_on='stay_id', right_on='stay_id')
-        chunk_merged['event_time_from_admit'] = chunk_merged[time_col] - chunk_merged['intime']
         
-        del chunk_merged[time_col] 
-        del chunk_merged['intime']
-        chunk_merged=chunk_merged.dropna()
-        chunk_merged=chunk_merged.drop_duplicates()
+        #chunk_merged=chunk.merge(cohort[['stay_id', 'intime']], how='inner', left_on='stay_id', right_on='stay_id')
+        chunk_merged = cohort[['stay_id', 'intime']].merge(chunk, how='left', on='stay_id')
+
+        #chunk_merged['event_time_from_admit'] = chunk_merged[time_col] - chunk_merged['intime']
+        # Compute relative time only if available
+        if time_col in chunk_merged.columns:
+            chunk_merged['event_time_from_admit'] = chunk_merged[time_col] - chunk_merged['intime']
+
+        
+        #del chunk_merged[time_col] 
+        #del chunk_merged['intime']
+        #chunk_merged=chunk_merged.dropna()
+        #chunk_merged=chunk_merged.drop_duplicates()
+        
+        # Remove only redundant columns, not NaNs in valuenum/itemid
+        for col in [time_col]:
+            if col in chunk_merged.columns:
+                chunk_merged.drop(columns=[col], inplace=True)
+
+        chunk_merged['valueuom'] = chunk_merged['valueuom'].fillna('')
+        # Only drop rows missing stay_id, not values
+        chunk_merged = chunk_merged.dropna(subset=['stay_id']).drop_duplicates()
+        
+        
         if df_cohort.empty:
             df_cohort=chunk_merged
         else:

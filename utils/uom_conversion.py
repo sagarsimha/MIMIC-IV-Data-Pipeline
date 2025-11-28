@@ -22,7 +22,11 @@ def drop_wrong_uom(data, cut_off):
             if(frequency/num_observations > cut_off):
                 values = uom
                 index_to_drop = values[values != most_frequent_measurement].index
-                data.drop(index_to_drop, axis=0, inplace=True)
+                
+                #data.drop(index_to_drop, axis=0, inplace=True)
+                # Instead of dropping, flag inconsistent units (non-destructive)
+                data.loc[index_to_drop, 'uom_flagged'] = True
+
     data = data.reset_index(drop=True)
 #     print(count)
     return data
